@@ -1,4 +1,4 @@
-# This document is for tracking my understanding of the RISC-V instruction set as I progress through its (instruction set manual)[https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html] and implement a simple emulator.
+# This document is for tracking my understanding of the RISC-V instruction set as I progress through its [instruction set manual](https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html) and implement a simple emulator.
 
 ### core
 A `core` is anything which has an independent instruction fetching unit.
