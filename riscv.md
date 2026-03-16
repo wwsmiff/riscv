@@ -45,8 +45,10 @@ The `EEI` determines the mapping of the resources onto a `hart`'s address space.
 - All instructions in 32-bit base ISA have their lowest two bits set to `11`.
 - Instructions with the lower 16 bits [15:0] as all zeroes are illegal instructions eg. `0xabcd0000` and are considered to be of minimal length. Instructions with bits [ILEN-1:0] -> [31:0] all zeroes is also illegal. This instruction is considered to be ILEN bits long. _This is to catch unintented jumps to zeroed out memory regions._ Similarly, instructions containing all 1s are also illegal to catch other patterns when interacting with unprogrammed non-volatile memory devices, non-functional memory buses, etc.
 - Instructions are stored in memory as 16-bit _little-endian_ `parcels`. with lowest-addressed `parcel`s holding lowest numbered bits.
-| 0xabcd | 0xwxyz | -> one instruction (two `parcel`s)
+```
+| 0xabcd | 0xwxyz | -> one instruction (two parcels)
     h        l
+```
 - This design is to allow the instruction fetching unit to access the length-encoding bits first and examining the first few bits, when dealing with variable-length instructions. _The `parcel`s themselves are also little-endian._
 ### Exceptions, interrupts and traps
 - `exceptions` - Unusual conditions occuring at runtime
