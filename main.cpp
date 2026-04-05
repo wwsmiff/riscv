@@ -153,7 +153,8 @@ struct Core {
         const uint8_t rd = (ins & rd_mask) >> 7;
         const uint8_t funct3 = (ins & funct3_mask) >> 12;
         if (funct3 != 0) {
-          std::println(stderr, "Illegal instruction at <0x{:08x}>", (pc - 4));
+          std::println(stderr, "Illegal jump instruction at <0x{:08x}>",
+                       (pc - 4));
           return;
         }
         const int32_t offset = (static_cast<int32_t>(imm) << 20) >> 20;
@@ -225,10 +226,43 @@ struct Core {
             pc = (pc - 4) + offset;
           }
         } else {
-          std::println(stderr, "Illegal instruction at <0x{:08x}>", (pc - 4));
+          std::println(stderr, "Illegal branch instruction at <0x{:08x}>",
+                       (pc - 4));
         }
       } else if (opcode == opcode::load) {
         std::println("load instruction.");
+        const uint32_t imm_mask = 0xfff00000;
+        const uint32_t rs1_mask = 0x000f8000;
+        const uint32_t funct3_mask = 0x00007000;
+        const uint32_t rd_mask = 0x00000f80;
+
+        const uint32_t imm = (ins & imm_mask) >> 20;
+        const uint8_t rs1 = (ins & rs1_mask) >> 15;
+        const uint8_t funct3 = (ins & funct3_mask) >> 12;
+        const uint8_t rd = (ins & rd_mask) >> 7;
+        const int32_t offset = (static_cast<int32_t>(imm) << 20) >> 20;
+        if (funct3 == 0b010) { // LW
+          x.at(rd) = memory.at(x.at(rs1) + offset);
+        } else if (funct3 == 0b001) { // LH
+          const int16_t halfword = memory.at(x.at(rs1) + offset);
+          const int32_t word = (halfword << 16) >> 16;
+          x.at(rd) = word;
+        } else if (funct3 == 0b000) { // LB
+          const int8_t byte = memory.at(x.at(rs1) + offset);
+          const int32_t word = (byte << 24) >> 24;
+          x.at(rd) = word;
+        } else if (funct3 == 0b100) { // LBU
+          const uint8_t byte = memory.at(x.at(rs1) + offset);
+          const uint32_t word = (byte << 24) >> 24;
+          x.at(rd) = word;
+        } else if (funct3 == 0b101) { // LHU
+          const uint16_t byte = memory.at(x.at(rs1) + offset);
+          const uint32_t word = (byte << 16) >> 16;
+          x.at(rd) = word;
+        } else {
+          std::println(stderr, "Illegal load instructiion at <0x{:08x}>",
+                       (pc - 4));
+        }
       } else if (opcode == opcode::store) {
         std::println("store instruction.");
       } else if (opcode == opcode::imm_reg) {
