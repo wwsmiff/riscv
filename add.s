@@ -16,6 +16,7 @@ main:
 	sw	a5,-20(s0)
 	li	a5,0
 	mv	a0,a5
+	lw x5,-20(s0)
 	lw	ra,28(sp)
 	lw	s0,24(sp)
 	addi	sp,sp,32

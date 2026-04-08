@@ -66,6 +66,25 @@ struct Core {
     memory.at(bindata.size() + 1) = 0xff;
     memory.at(bindata.size() + 2) = 0xff;
     memory.at(bindata.size() + 3) = 0xff;
+
+    std::println("Instructions in memory:");
+    for (size_t i{}; i < memory.size(); i += 4) {
+      platform::instruction_t ins{};
+
+      const uint8_t byte0 = memory.at(i);
+      const uint8_t byte1 = memory.at(i + 1);
+      const uint8_t byte2 = memory.at(i + 2);
+      const uint8_t byte3 = memory.at(i + 3);
+
+      const uint16_t parcel0 = static_cast<uint16_t>((byte1 << 8) | byte0);
+      const uint16_t parcel1 = static_cast<uint16_t>((byte3 << 8) | byte2);
+
+      ins = static_cast<platform::instruction_t>((parcel1 << 16) | parcel0);
+
+      if (ins != 0x00000000 && ins != 0xffffffff) {
+        std::println("<0x{:08x}>:\t0x{:08x}", i, ins);
+      }
+    }
   }
 
   platform::instruction_t fetch() {
@@ -86,14 +105,13 @@ struct Core {
   }
 
   void execute() {
-    platform::instruction_t ins{};
-    while (ins != 0xffffffff) {
-      ins = fetch();
+    platform::instruction_t ins = fetch();
+    while (ins != 0xffffffff && ins != 0x00000000) {
       std::print("0x{:08x}: ", ins);
       const uint32_t opcode_mask = 0x7f;
       const uint8_t opcode = ins & opcode_mask;
 
-      if (opcode == opcode::lui) { // U-type
+      if (opcode == opcode::lui) {
         std::println("lui instruction.");
         const uint32_t rd_mask = 0xf80;
         const uint32_t imm_mask = 0xfffff000;
@@ -158,16 +176,19 @@ struct Core {
           return;
         }
         const int32_t offset = (static_cast<int32_t>(imm) << 20) >> 20;
-        const int32_t target_address = (x.at(rs1) + offset) & ~1;
+        const int32_t target_address =
+            (static_cast<int32_t>(x.at(rs1)) + offset) & ~1;
+
+        if (target_address == 0) {
+          return;
+        }
+
         if ((target_address & 0x3) != 0) {
           std::println(
               stderr,
               "Target address for JALR<0x{:08x}> is not 4-byte aligned.",
               (pc - 4));
 
-          return;
-        }
-        if (target_address == 0) {
           return;
         }
         x.at(rd) = pc;
@@ -241,6 +262,7 @@ struct Core {
         const uint8_t funct3 = (ins & funct3_mask) >> 12;
         const uint8_t rd = (ins & rd_mask) >> 7;
         const int32_t offset = (static_cast<int32_t>(imm) << 20) >> 20;
+
         if (funct3 == 0b010) { // LW
           x.at(rd) = memory.at(x.at(rs1) + offset);
         } else if (funct3 == 0b001) { // LH
@@ -265,8 +287,85 @@ struct Core {
         }
       } else if (opcode == opcode::store) {
         std::println("store instruction.");
+        const uint32_t imm11_5_mask = 0xfe000000;
+        const uint32_t rs2_mask = 0x01f00000;
+        const uint32_t rs1_mask = 0x000f8000;
+        const uint32_t funct3_mask = 0x00007000;
+        const uint32_t imm4_0_mask = 0x00000f80;
+
+        const uint32_t imm11_5 = (ins & imm11_5_mask);
+        const uint8_t rs2 = (ins & rs2_mask) >> 20;
+        const uint8_t rs1 = (ins & rs1_mask) >> 15;
+        const uint8_t funct3 = (ins & funct3_mask) >> 12;
+        const uint32_t imm4_0 = (ins & imm4_0_mask);
+
+        const uint32_t imm = (imm11_5 >> 20) | (imm4_0 >> 7);
+        const int32_t signed_imm = (static_cast<int32_t>(imm) << 20) >> 20;
+
+        const uint32_t target_address = x.at(rs1) + signed_imm;
+
+        if (funct3 == 0b000) { // SB
+          const uint8_t b = x.at(rs2) & 0xff;
+          memory.at(target_address) = b;
+        } else if (funct3 == 0b001) { // SH
+          const uint16_t hw = x.at(rs2) & 0xffff;
+          const uint8_t b1 = (hw & 0xff00) >> 8;
+          const uint8_t b0 = (hw & 0x00ff);
+          memory.at(target_address) = b0;
+          memory.at(target_address + 1) = b1;
+        } else if (funct3 == 0b010) { // SW
+          const uint32_t w = x.at(rs2);
+          const uint32_t b3 = (w & 0xff000000) >> 24;
+          const uint32_t b2 = (w & 0x00ff0000) >> 16;
+          const uint32_t b1 = (w & 0x0000ff00) >> 8;
+          const uint32_t b0 = (w & 0x000000ff);
+
+          memory.at(target_address) = b0;
+          memory.at(target_address + 1) = b1;
+          memory.at(target_address + 2) = b2;
+          memory.at(target_address + 3) = b3;
+        } else {
+          std::println(stderr, "Illegal store instruction at <0x{:08x}>",
+                       (pc - 4));
+        }
       } else if (opcode == opcode::imm_reg) {
         std::println("imm-reg instruction.");
+        const uint32_t imm_mask = 0xfff00000;
+        const uint32_t rs1_mask = 0x000f8000;
+        const uint32_t funct3_mask = 0x00007000;
+        const uint32_t rd_mask = 0x00000f80;
+
+        const uint32_t imm = (ins & imm_mask) >> 20;
+        const uint8_t rs1 = (ins & rs1_mask) >> 15;
+        const uint8_t funct3 = (ins & funct3_mask) >> 12;
+        const uint8_t rd = (ins & rd_mask) >> 7;
+
+        const int32_t signed_imm = (static_cast<int32_t>(imm) << 20) >> 20;
+
+        if (funct3 == 0b000) { // ADDI
+          x.at(rd) = x.at(rs1) + signed_imm;
+        } else if (funct3 == 0b010) { // SLTI
+          x.at(rd) = static_cast<int32_t>(rs1) < signed_imm;
+        } else if (funct3 == 0b011) { // SLTIU
+          x.at(rd) = rs1 < imm;
+        } else if (funct3 == 0b100) { // XORI
+          x.at(rd) = rs1 ^ signed_imm;
+        } else if (funct3 == 0b110) { // ORI
+          x.at(rd) = rs1 | signed_imm;
+        } else if (funct3 == 0b111) { // ANDI
+          x.at(rd) = rs1 & signed_imm;
+        } else if (funct3 == 0b001) { // SLLI
+          uint8_t shiftamt = imm & 0x1f;
+          x.at(rd) = x.at(rs1) << shiftamt;
+        } else if (funct3 == 0b101) { // Shift right
+          uint8_t shiftamt = imm & 0x1f;
+          bool arithmetic = imm & 0b01000000;
+          if (arithmetic) { // SRAI
+            x.at(rd) = static_cast<int32_t>(x.at(rs1)) >> shiftamt;
+          } else { // SRLI
+            x.at(rd) = x.at(rs1) >> shiftamt;
+          }
+        }
       } else if (opcode == opcode::reg_reg) {
         std::println("reg-reg instruction.");
       } else if (opcode == opcode::fence) {
@@ -274,6 +373,7 @@ struct Core {
       } else if (opcode == opcode::system) {
         std::println("system instruction.");
       }
+      ins = fetch();
     }
   }
 };
@@ -319,6 +419,8 @@ int main(int argc, char **argv) {
   const auto exedata = bindata(exepath);
 
   riscv::Core core{};
+  core.x.at(2) = riscv::platform::memory_size;
+
   core.load_binfile(exedata);
   core.execute();
 
