@@ -310,11 +310,53 @@ void Core::execute() {
         }
       }
     } else if (opcode == opcode::reg_reg) {
-      std::println("reg-reg instruction.");
+      const uint32_t funct7_mask = 0xfe000000;
+      const uint32_t rs2_mask = 0x01f00000;
+      const uint32_t rs1_mask = 0x000f8000;
+      const uint32_t funct3_mask = 0x00007000;
+      const uint32_t rd_mask = 0x00000f80;
+
+      const uint8_t funct7 = (ins & funct7_mask) >> 25;
+      const uint8_t rs2 = (ins & rs2_mask) >> 20;
+      const uint8_t rs1 = (ins & rs1_mask) >> 15;
+      const uint8_t funct3 = (ins & funct3_mask) >> 12;
+      const uint8_t rd = (ins & rd_mask) >> 7;
+
+      if (funct3 == 0b000) {
+        if (funct7 == 0) { // add
+          x.at(rd) = x.at(rs1) + x.at(rs2);
+        } else if (funct7 == 0x40) { // sub
+          x.at(rd) = x.at(rs1) - x.at(rs2);
+        }
+      } else if (funct3 == 0b001) { // SLL
+        const uint8_t shiftamt = x.at(rs2) & 0x1f;
+        x.at(rd) = x.at(rs1) >> shiftamt;
+      } else if (funct3 == 0b010) { // SLT
+        x.at(rd) =
+            static_cast<int32_t>(x.at(rs1)) < static_cast<int32_t>(x.at(rs2));
+      } else if (funct3 == 0b011) { // SLTU
+        x.at(rd) = x.at(rs1) < x.at(rs2);
+      } else if (funct3 == 0b100) { // XOR
+        x.at(rd) = x.at(rs1) ^ x.at(rs2);
+      } else if (funct3 == 0b101) {
+        const uint8_t shiftamt = x.at(rs2) & 0x1f;
+        if (funct7 == 0) { // SRL
+          x.at(rd) = x.at(rs1) >> shiftamt;
+        } else if (funct7 == 0x40) { // SRA
+          x.at(rd) = static_cast<int32_t>(x.at(rs1)) >> shiftamt;
+        }
+      } else if (funct3 == 0b110) { // OR
+        x.at(rd) = x.at(rs1) | x.at(rs2);
+      } else if (funct3 == 0b111) { // AND
+        x.at(rd) = x.at(rs1) & x.at(rs2);
+      }
+
     } else if (opcode == opcode::fence) {
-      std::println("fence instruction.");
+      std::println("fence instructions unimplemented.");
+      return;
     } else if (opcode == opcode::system) {
-      std::println("system instruction.");
+      std::println("system instructions unimplemented");
+      return;
     }
     ins = fetch();
   }
