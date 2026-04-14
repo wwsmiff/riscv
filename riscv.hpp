@@ -8,10 +8,11 @@ namespace platform {
 using opcode_t = uint8_t;
 using instruction_t = uint32_t;
 
-constexpr auto ialign{32};
-constexpr auto ilen{32};
-constexpr auto allow_misaligned_accesses{false};
-constexpr auto memory_size{2 << 20}; // 2 MiB.
+constexpr uint32_t ialign{32};
+constexpr uint32_t ilen{32};
+constexpr uint32_t allow_misaligned_accesses{false};
+constexpr uint32_t memory_size{2 << 20}; // 2 MiB.
+constexpr uint32_t memory_base{0x80000000};
 }; // namespace platform
 
 /* clang-format off */
@@ -51,7 +52,7 @@ constexpr opcode_t system  = 0b0'1110011;
 /* clang-format on */
 
 struct Core {
-  uint32_t pc{};
+  uint32_t pc{platform::memory_base};
   std::array<uint32_t, 32> x{};
   std::array<uint8_t, platform::memory_size> memory{};
   void load_binfile(const std::vector<uint8_t> &bindata);

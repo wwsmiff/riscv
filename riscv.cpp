@@ -27,18 +27,17 @@ void Core::load_binfile(const std::vector<uint8_t> &bindata) {
     ins = static_cast<platform::instruction_t>((parcel1 << 16) | parcel0);
 
     if (ins != 0x00000000 && ins != 0xffffffff) {
-      std::println("<0x{:08x}>:\t0x{:08x}", i, ins);
+      std::println("<0x{:08x}>:\t0x{:08x}", i + platform::memory_base, ins);
     }
   }
 }
 
 platform::instruction_t Core::fetch() {
   platform::instruction_t ins{};
-
-  const uint8_t byte0 = memory.at(pc);
-  const uint8_t byte1 = memory.at(pc + 1);
-  const uint8_t byte2 = memory.at(pc + 2);
-  const uint8_t byte3 = memory.at(pc + 3);
+  const uint8_t byte0 = memory.at(pc - platform::memory_base);
+  const uint8_t byte1 = memory.at((pc - platform::memory_base) + 1);
+  const uint8_t byte2 = memory.at((pc - platform::memory_base) + 2);
+  const uint8_t byte3 = memory.at((pc - platform::memory_base) + 3);
 
   const uint16_t parcel0 = static_cast<uint16_t>((byte1 << 8) | byte0);
   const uint16_t parcel1 = static_cast<uint16_t>((byte3 << 8) | byte2);
@@ -52,7 +51,8 @@ platform::instruction_t Core::fetch() {
 void Core::execute() {
   platform::instruction_t ins = fetch();
   while (ins != 0xffffffff && ins != 0x00000000) {
-    std::print("0x{:08x}: ", ins);
+    x.at(0) = 0;
+    std::print("<0x{:08x}> 0x{:08x}: ", (pc - 4), ins);
     const uint32_t opcode_mask = 0x7f;
     const uint8_t opcode = ins & opcode_mask;
 
@@ -60,7 +60,6 @@ void Core::execute() {
       std::println("lui instruction.");
       const uint32_t rd_mask = 0xf80;
       const uint32_t imm_mask = 0xfffff000;
-
       const uint8_t rd = (ins & rd_mask) >> 7;
       const uint32_t imm = ins & imm_mask;
       x.at(rd) = imm;
@@ -121,12 +120,8 @@ void Core::execute() {
         return;
       }
       const int32_t offset = (static_cast<int32_t>(imm) << 20) >> 20;
-      const int32_t target_address =
+      const uint32_t target_address =
           (static_cast<int32_t>(x.at(rs1)) + offset) & ~1;
-
-      if (target_address == 0) {
-        return;
-      }
 
       if ((target_address & 0x3) != 0) {
         std::println(stderr,
@@ -144,8 +139,8 @@ void Core::execute() {
       const uint32_t rs2_mask = 0x01f00000;
       const uint32_t rs1_mask = 0x000f8000;
       const uint32_t funct3_mask = 0x00007000;
-      const uint32_t imm4_1_mask = 0x00000f80;
-      const uint32_t imm11_mask = 0x00000040;
+      const uint32_t imm4_1_mask = 0x00000f00;
+      const uint32_t imm11_mask = 0x00000080;
 
       const uint8_t rs1 = (ins & rs1_mask) >> 15;
       const uint8_t rs2 = (ins & rs2_mask) >> 20;
@@ -157,10 +152,9 @@ void Core::execute() {
       const uint32_t imm11 = ins & imm11_mask;
 
       const uint32_t imm =
-          (imm12 >> 19) | (imm11 << 5) | (imm10_5 >> 20) | (imm4_1 >> 7);
+          (imm12 >> 19) | (imm11 << 4) | (imm10_5 >> 20) | (imm4_1 >> 8) << 1;
 
       int32_t offset = (static_cast<int32_t>(imm) << 19) >> 19;
-      offset <<= 1;
 
       if (funct3 == 0b000) { // BEQ
         if (static_cast<int32_t>(x.at(rs1)) ==
@@ -206,24 +200,33 @@ void Core::execute() {
       const uint8_t rd = (ins & rd_mask) >> 7;
       const int32_t offset = (static_cast<int32_t>(imm) << 20) >> 20;
 
+      const uint32_t target_address =
+          (x.at(rs1) + offset) - platform::memory_base;
+
       if (funct3 == 0b010) { // LW
-        x.at(rd) = memory.at(x.at(rs1) + offset);
+        uint32_t byte0 = memory.at(target_address);
+        uint32_t byte1 = memory.at(target_address + 1) << 8;
+        uint32_t byte2 = memory.at(target_address + 2) << 16;
+        uint32_t byte3 = memory.at(target_address + 3) << 24;
+        x.at(rd) = byte3 | byte2 | byte1 | byte0;
       } else if (funct3 == 0b001) { // LH
-        const int16_t halfword = memory.at(x.at(rs1) + offset);
+        const uint16_t byte0 = memory.at(target_address);
+        const uint16_t byte1 = memory.at(target_address + 1) << 8;
+        const int16_t halfword = byte1 | byte0;
         const int32_t word = (halfword << 16) >> 16;
         x.at(rd) = word;
       } else if (funct3 == 0b000) { // LB
-        const int8_t byte = memory.at(x.at(rs1) + offset);
+        const int8_t byte = memory.at(target_address);
         const int32_t word = (byte << 24) >> 24;
         x.at(rd) = word;
       } else if (funct3 == 0b100) { // LBU
-        const uint8_t byte = memory.at(x.at(rs1) + offset);
-        const uint32_t word = (byte << 24) >> 24;
-        x.at(rd) = word;
+        const uint8_t byte = memory.at(target_address);
+        x.at(rd) = byte;
       } else if (funct3 == 0b101) { // LHU
-        const uint16_t byte = memory.at(x.at(rs1) + offset);
-        const uint32_t word = (byte << 16) >> 16;
-        x.at(rd) = word;
+        const uint16_t byte0 = memory.at(target_address);
+        const uint16_t byte1 = memory.at(target_address + 1) << 8;
+        const uint16_t halfword = byte1 | byte0;
+        x.at(rd) = static_cast<uint32_t>(halfword);
       } else {
         std::println(stderr, "Illegal load instructiion at <0x{:08x}>",
                      (pc - 4));
@@ -245,7 +248,8 @@ void Core::execute() {
       const uint32_t imm = (imm11_5 >> 20) | (imm4_0 >> 7);
       const int32_t signed_imm = (static_cast<int32_t>(imm) << 20) >> 20;
 
-      const uint32_t target_address = x.at(rs1) + signed_imm;
+      const uint32_t target_address =
+          (x.at(rs1) + signed_imm) - platform::memory_base;
 
       if (funct3 == 0b000) { // SB
         const uint8_t b = x.at(rs2) & 0xff;
@@ -288,15 +292,15 @@ void Core::execute() {
       if (funct3 == 0b000) { // ADDI
         x.at(rd) = x.at(rs1) + signed_imm;
       } else if (funct3 == 0b010) { // SLTI
-        x.at(rd) = static_cast<int32_t>(rs1) < signed_imm;
+        x.at(rd) = static_cast<int32_t>(x.at(rs1)) < signed_imm;
       } else if (funct3 == 0b011) { // SLTIU
-        x.at(rd) = rs1 < imm;
+        x.at(rd) = x.at(rs1) < static_cast<uint32_t>(imm);
       } else if (funct3 == 0b100) { // XORI
-        x.at(rd) = rs1 ^ signed_imm;
+        x.at(rd) = x.at(rs1) ^ signed_imm;
       } else if (funct3 == 0b110) { // ORI
-        x.at(rd) = rs1 | signed_imm;
+        x.at(rd) = x.at(rs1) | signed_imm;
       } else if (funct3 == 0b111) { // ANDI
-        x.at(rd) = rs1 & signed_imm;
+        x.at(rd) = x.at(rs1) & signed_imm;
       } else if (funct3 == 0b001) { // SLLI
         uint8_t shiftamt = imm & 0x1f;
         x.at(rd) = x.at(rs1) << shiftamt;
@@ -323,14 +327,14 @@ void Core::execute() {
       const uint8_t rd = (ins & rd_mask) >> 7;
 
       if (funct3 == 0b000) {
-        if (funct7 == 0) { // add
+        if (funct7 == 0) { // ADD
           x.at(rd) = x.at(rs1) + x.at(rs2);
-        } else if (funct7 == 0x40) { // sub
+        } else if (funct7 == 0x40) { // SUB
           x.at(rd) = x.at(rs1) - x.at(rs2);
         }
       } else if (funct3 == 0b001) { // SLL
         const uint8_t shiftamt = x.at(rs2) & 0x1f;
-        x.at(rd) = x.at(rs1) >> shiftamt;
+        x.at(rd) = x.at(rs1) << shiftamt;
       } else if (funct3 == 0b010) { // SLT
         x.at(rd) =
             static_cast<int32_t>(x.at(rs1)) < static_cast<int32_t>(x.at(rs2));
@@ -350,13 +354,27 @@ void Core::execute() {
       } else if (funct3 == 0b111) { // AND
         x.at(rd) = x.at(rs1) & x.at(rs2);
       }
-
     } else if (opcode == opcode::fence) {
       std::println("fence instructions unimplemented.");
-      return;
     } else if (opcode == opcode::system) {
-      std::println("system instructions unimplemented");
-      return;
+      std::println("system instruction");
+      const uint32_t imm_mask = 0xfff00000;
+      const uint32_t rs1_mask = 0x000f8000;
+      const uint32_t funct3_mask = 0x00007000;
+      const uint32_t rd_mask = 0x00000f80;
+
+      const uint32_t imm = (ins & imm_mask) >> 20;
+      const uint8_t rs1 = (ins & rs1_mask) >> 15;
+      const uint8_t funct3 = (ins & funct3_mask) >> 12;
+      const uint8_t rd = (ins & rd_mask) >> 7;
+
+      if (imm == 0) { // ecall
+        std::println("ecall is unimplemented, hence halting execution.");
+        return;
+      }
+
+    } else {
+      std::println("unimplemented instruction");
     }
     ins = fetch();
   }
