@@ -138,7 +138,7 @@ Notably, the first source register `rs1`, second source register `rs2` and desti
 - `ADDI` - adds sign-extended 12 bit immediate to `rs1`. Overflow is ignored and result is the low `XLEN` bits of the result. _`ADDI` rd, rs1, 0` is used to implement the pseudoinstruction `MV rd1, rs1`.
 
 ###### Comparison instruction
-- `SLTI` - places `1` in `rd` if `rs1` is less than the sign-extended immediate when both are signed numbers else `0`. For unsigned integers, `SLTIU` is used, it sets `rd` to `1` is `rs1` equals zero else  `rd` is set to `0`.
+- `SLTI` - places `1` in `rd` if `rs1` is less than the sign-extended immediate when both are signed numbers else `0`. For unsigned integers, `SLTIU` is used, it sets `rd` to `1` is `rs1` < sign-extended immediate, but in this case the signed-extended immediate is treated as as unsigned integer else  `rd` is set to `0`.
 
 ###### Logical instructions
 - `ANDI/ORI/XORI` - logical operations AND, OR and XOR respectively on `rs1` and signed extended 12-bit immediate and place result in `rd`. _`XORI rd, rs1, -1` performs bitwise logical inversion of rs1_.
