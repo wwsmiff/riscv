@@ -292,7 +292,7 @@ void Core::execute() {
       } else if (funct3 == 0b010) { // SLTI
         x.at(rd) = static_cast<int32_t>(x.at(rs1)) < signed_imm;
       } else if (funct3 == 0b011) { // SLTIU
-        x.at(rd) = x.at(rs1) < static_cast<uint32_t>(imm);
+        x.at(rd) = x.at(rs1) < static_cast<uint32_t>(signed_imm);
       } else if (funct3 == 0b100) { // XORI
         x.at(rd) = x.at(rs1) ^ signed_imm;
       } else if (funct3 == 0b110) { // ORI
