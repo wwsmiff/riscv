@@ -63,6 +63,7 @@ void Core::execute() {
       const uint8_t rd = (ins & rd_mask) >> 7;
       const uint32_t imm = ins & imm_mask;
       x.at(rd) = imm;
+      std::println("loaded value: {}", x.at(rd));
     } else if (opcode == opcode::auipc) {
       std::println("auipc instruction.");
       const uint32_t rd_mask = 0xf80;
@@ -162,6 +163,7 @@ void Core::execute() {
           pc = (pc - 4) + offset;
         }
       } else if (funct3 == 0b001) { // BNE
+        std::println("{} == {}", x.at(rs1), x.at(rs2));
         if (static_cast<int32_t>(x.at(rs1)) !=
             static_cast<int32_t>(x.at(rs2))) {
           pc = (pc - 4) + offset;
@@ -306,10 +308,12 @@ void Core::execute() {
         x.at(rd) = x.at(rs1) << shiftamt;
       } else if (funct3 == 0b101) { // Shift right
         uint8_t shiftamt = imm & 0x1f;
-        bool arithmetic = imm & 0b01000000;
+        bool arithmetic = imm & 0b010000000000;
         if (arithmetic) { // SRAI
+          std::println("Arithmetic rshift");
           x.at(rd) = static_cast<int32_t>(x.at(rs1)) >> shiftamt;
         } else { // SRLI
+          std::println("Normal rshift");
           x.at(rd) = x.at(rs1) >> shiftamt;
         }
       }
