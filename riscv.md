@@ -148,7 +148,7 @@ Notably, the first source register `rs1`, second source register `rs2` and desti
 
 ###### Misc (??)
 - `LUI` - Load upper immediate, used to build 32-bit constants and uses the `U` format. LUI places the 32-bit `U-immediate` value into `rd`, filling in the lowest 12 bits with 0s.
-- `AUIPC` - Add upper immediate to `pc`, used to build pc-relative addresses, uses the `U` format and places the result in `rd`.
+- `AUIPC` - Add upper immediate to `pc` after filling in lowest 12 bits with 0, used to build pc-relative addresses, uses the `U` format and places the result in `rd`.
 
 #### Integer resgister-register instructions
 ###### Arithmetic instructions

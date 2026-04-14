@@ -63,7 +63,6 @@ void Core::execute() {
       const uint8_t rd = (ins & rd_mask) >> 7;
       const uint32_t imm = ins & imm_mask;
       x.at(rd) = imm;
-      std::println("loaded value: {}", x.at(rd));
     } else if (opcode == opcode::auipc) {
       std::println("auipc instruction.");
       const uint32_t rd_mask = 0xf80;
@@ -73,7 +72,6 @@ void Core::execute() {
       const uint32_t imm = ins & imm_mask;
 
       x.at(rd) = (pc - 4) + imm;
-
     } else if (opcode == opcode::jal) {
       std::println("jal instruction.");
       const uint32_t imm20_mask = 0x80000000;    // [31]
@@ -91,8 +89,6 @@ void Core::execute() {
       const uint32_t imm =
           (imm20 >> 11) | (imm19_12) | (imm11 >> 9) | (imm10_1 >> 20);
 
-      x.at(rd) = pc;
-
       const int32_t offset =
           (static_cast<int32_t>(imm) << 11) >> 11; // sign extend
       const uint32_t target_address = (pc - 4) + offset;
@@ -103,6 +99,7 @@ void Core::execute() {
         return;
       }
 
+      x.at(rd) = pc;
       pc = target_address;
     } else if (opcode == opcode::jalr) {
       std::println("jalr instruction.");
@@ -163,7 +160,6 @@ void Core::execute() {
           pc = (pc - 4) + offset;
         }
       } else if (funct3 == 0b001) { // BNE
-        std::println("{} == {}", x.at(rs1), x.at(rs2));
         if (static_cast<int32_t>(x.at(rs1)) !=
             static_cast<int32_t>(x.at(rs2))) {
           pc = (pc - 4) + offset;
@@ -310,10 +306,8 @@ void Core::execute() {
         uint8_t shiftamt = imm & 0x1f;
         bool arithmetic = imm & 0b010000000000;
         if (arithmetic) { // SRAI
-          std::println("Arithmetic rshift");
           x.at(rd) = static_cast<int32_t>(x.at(rs1)) >> shiftamt;
         } else { // SRLI
-          std::println("Normal rshift");
           x.at(rd) = x.at(rs1) >> shiftamt;
         }
       }
@@ -333,7 +327,7 @@ void Core::execute() {
       if (funct3 == 0b000) {
         if (funct7 == 0) { // ADD
           x.at(rd) = x.at(rs1) + x.at(rs2);
-        } else if (funct7 == 0x40) { // SUB
+        } else if (funct7 == 0x20) { // SUB
           x.at(rd) = x.at(rs1) - x.at(rs2);
         }
       } else if (funct3 == 0b001) { // SLL
@@ -350,7 +344,7 @@ void Core::execute() {
         const uint8_t shiftamt = x.at(rs2) & 0x1f;
         if (funct7 == 0) { // SRL
           x.at(rd) = x.at(rs1) >> shiftamt;
-        } else if (funct7 == 0x40) { // SRA
+        } else if (funct7 == 0x20) { // SRA
           x.at(rd) = static_cast<int32_t>(x.at(rs1)) >> shiftamt;
         }
       } else if (funct3 == 0b110) { // OR
