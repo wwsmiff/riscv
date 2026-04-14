@@ -13,6 +13,7 @@ constexpr uint32_t ilen{32};
 constexpr uint32_t allow_misaligned_accesses{false};
 constexpr uint32_t memory_size{2 << 20}; // 2 MiB.
 constexpr uint32_t memory_base{0x80000000};
+constexpr bool verbose{false};
 }; // namespace platform
 
 /* clang-format off */

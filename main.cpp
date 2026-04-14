@@ -52,9 +52,11 @@ int main(int argc, char **argv) {
   core.load_binfile(exedata);
   core.execute();
 
-  for (size_t i{}; i < core.x.size(); ++i) {
-    auto val = core.x.at(i);
-    std::println("x{} = 0x{:08x}, 0b{:032b}, {}", i, val, val, val);
+  if constexpr (riscv::platform::verbose) {
+    for (size_t i{}; i < core.x.size(); ++i) {
+      auto val = core.x.at(i);
+      std::println("x{} = 0x{:08x}, 0b{:032b}, {}", i, val, val, val);
+    }
   }
 
   // for riscv-tests [https://github.com/riscv-software-src/riscv-tests]
