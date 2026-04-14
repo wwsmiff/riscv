@@ -10,4 +10,4 @@ chmod +x run_tests.sh
 ./run_tests.sh
 ```
 
-currently 6/42 tests for `rv32ui-p-*` fail. `ui` - user-level integer only, `p` - no virtual memory, single core.
+currently 6/42 tests for `rv32ui-p-*` fail. `ui` - user-level, integer, `p` - no virtual memory, single core.
