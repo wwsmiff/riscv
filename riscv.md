@@ -153,6 +153,7 @@ Notably, the first source register `rs1`, second source register `rs2` and desti
 #### Integer resgister-register instructions
 ###### Arithmetic instructions
 `ADD/SLT` - Same as the corresponding `register-immediate` instructions.
+`SUB` - Subtracts subtraction of rs2 from rs1 and the lower `XLEN` bits are written to `rd`.
 `AND/OR/XOR` - Perform logical bitwise operations.
 `SLL/SRL/SRA` - Perform logical shl, logical shr and arithmetic shift on `rs2` by the amount held in the lower 5 bits of `rs2`.
 
