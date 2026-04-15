@@ -201,4 +201,4 @@ Loads are encoded in `I` format and stores are encoded in `S` format. The effect
 - `DIV` - performs division of signed `rs1` by signed `rs2`.
 - `DIVU` - performs division of unsigned `rs1` by unsigned `rs2`.
 - `REM[U]` - provides the remainder of the aforementioned division operations.
-_Division by zero is handled by setting the quotient to all 1s. Division by zero for remainder instructions is handled by setting `rd` to the dividend._
+_Division by zero is handled by setting the quotient to all 1s. Division by zero for remainder instructions is handled by setting `rd` to the dividend. Also there is only one case when signed division over flow occurs, that is when the dividend is `INT_MIN` and divisor is -1. This should be handled by setting `rd` = INT_MIN in case of divion and `rd` = 0 in case of remainder._
