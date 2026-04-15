@@ -10,4 +10,4 @@ chmod +x run_tests.sh
 ./run_tests.sh
 ```
 
-currently all tests for `rv32ui-p-*` pass. `ui` - user-level, integer, `p` - no virtual memory, single core.
+currently all tests for `rv32u[mi]-p-*` pass. `ui` - user-level, integer, multiplication/division instructions `p` - no virtual memory, single core.
