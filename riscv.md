@@ -189,3 +189,16 @@ Loads are encoded in `I` format and stores are encoded in `S` format. The effect
 
 ### Memory ordering instructions
 ... yet to implement
+
+### M extension for multiplication and division
+###### Multiplication
+- `MUL` - performs `XLEN-bit`x`XLEN-bit` from `rs1` and `rs2` and stores the lower `XLEN` bits of the result in `rd`.
+- `MULH` - peforms `MUL` but stores the upper `XLEN`-bits.
+- `MULHU` - performs `MULH` but for unsigned `rs1` and unsigned `rs2`.
+- `MULHSU` - performs `MULH` for signed `rs1` and unsigned `rs2`.
+
+###### Division
+- `DIV` - performs division of signed `rs1` by signed `rs2`.
+- `DIVU` - performs division of unsigned `rs1` by unsigned `rs2`.
+- `REM[U]` - provides the remainder of the aforementioned division operations.
+_Division by zero is handled by setting the quotient to all 1s. Division by zero for remainder instructions is handled by setting `rd` to the dividend._

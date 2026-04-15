@@ -3,8 +3,14 @@
 #include <cstdint>
 #include <vector>
 
+#define EXTENSIONS m
+
 namespace riscv {
 namespace platform {
+enum class Extensions : uint8_t {
+  m = 1, // multiplication and division instructions
+};
+
 using opcode_t = uint8_t;
 using instruction_t = uint32_t;
 
@@ -13,7 +19,10 @@ constexpr uint32_t ilen{32};
 constexpr uint32_t allow_misaligned_accesses{false};
 constexpr uint32_t memory_size{2 << 20}; // 2 MiB.
 constexpr uint32_t memory_base{0x80000000};
-constexpr bool verbose{false};
+constexpr bool verbose{};
+#if EXTENSIONS == m
+constexpr uint8_t extensions = static_cast<uint8_t>(Extensions::m);
+#endif
 }; // namespace platform
 
 /* clang-format off */

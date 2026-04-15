@@ -7,6 +7,8 @@ RISCV_OBJCOPY="riscv64-unknown-elf-objcopy"
 RISCV_HOST="riscv64-unknown-elf"
 RISCV_TESTS_DIR="./riscv-tests"
 RISCV_TESTS_SIMPLIFIED_DIR="./riscv-tests-simplified"
+EMULATOR_EXTENSIONS="m"
+FIND_PATTERN="rv32u[mi]-p-*"
 
 set -xe
 
@@ -24,9 +26,13 @@ if [ ! -d $RISCV_TESTS_DIR ]; then
 	cd ..
 fi
 
+if [ $EMULATOR_EXTENSIONS != "m" ]; then
+	FIND_PATTERN="rv32ui-p-*"
+fi
+
 # if there's no need to git clone, assume already built test executables for rv32ui
 mkdir -p $RISCV_TESTS_SIMPLIFIED_DIR
-for exe in $(find "$RISCV_TESTS_DIR/isa" -type f -executable -name "rv32ui-p-*")
+for exe in $(find "$RISCV_TESTS_DIR/isa" -type f -executable -name $FIND_PATTERN)
 do
 	$RISCV_OBJDUMP -S $exe > "$RISCV_TESTS_SIMPLIFIED_DIR/$(basename $exe).S"
 	$RISCV_OBJCOPY -O binary $exe "$RISCV_TESTS_SIMPLIFIED_DIR/$(basename $exe).bin"

@@ -52,6 +52,8 @@ platform::instruction_t Core::fetch() {
 
 void Core::execute() {
   platform::instruction_t ins = fetch();
+  constexpr auto m =
+      platform::extensions & static_cast<uint8_t>(platform::Extensions::m);
   while (ins != 0xffffffff && ins != 0x00000000) {
     x.at(0) = 0;
     if constexpr (platform::verbose) {
@@ -188,6 +190,7 @@ void Core::execute() {
       case 0b001: { // BNE
         if (static_cast<int32_t>(x.at(rs1)) !=
             static_cast<int32_t>(x.at(rs2))) {
+          std::println("{} == {}", x.at(rs1), x.at(rs2));
           pc = (pc - 4) + offset;
         }
         break;
@@ -422,24 +425,80 @@ void Core::execute() {
         } else if (funct7 == 0x20) { // SUB
           x.at(rd) = x.at(rs1) - x.at(rs2);
         }
+        if constexpr (m) {
+          std::println("mul instruction.");
+          if (funct7 == 1) { // MUL
+            const uint64_t product = x.at(rs1) * x.at(rs2);
+            x.at(rd) = static_cast<uint32_t>(product & 0xffffffff);
+          }
+        }
         break;
       }
       case 0b001: { // SLL
-        const uint8_t shiftamt = x.at(rs2) & 0x1f;
-        x.at(rd) = x.at(rs1) << shiftamt;
+        if (funct7 == 0) {
+          const uint8_t shiftamt = x.at(rs2) & 0x1f;
+          x.at(rd) = x.at(rs1) << shiftamt;
+        }
+        if constexpr (m) {
+          if (funct7 == 1) { // MULH
+            const int64_t signed_rs1 =
+                (static_cast<int64_t>(x.at(rs1)) << 32) >> 32;
+            const int64_t signed_rs2 =
+                (static_cast<int64_t>(x.at(rs2)) << 32) >> 32;
+            const int64_t product = signed_rs1 * signed_rs2;
+            x.at(rd) = product >> 32;
+          }
+        }
         break;
       }
       case 0b010: { // SLT
-        x.at(rd) =
-            static_cast<int32_t>(x.at(rs1)) < static_cast<int32_t>(x.at(rs2));
+        if (funct7 == 0) {
+          x.at(rd) =
+              static_cast<int32_t>(x.at(rs1)) < static_cast<int32_t>(x.at(rs2));
+        }
+        if constexpr (m) { // MULHSU
+          if (funct7 == 1) {
+            const int64_t signed_rs1 =
+                (static_cast<int64_t>(x.at(rs1)) << 32) >> 32;
+            const int64_t product =
+                signed_rs1 * static_cast<uint64_t>(x.at(rs2));
+            x.at(rd) = product >> 32;
+          }
+        }
         break;
       }
       case 0b011: { // SLTU
-        x.at(rd) = x.at(rs1) < x.at(rs2);
+        if (funct7 == 0) {
+          x.at(rd) = x.at(rs1) < x.at(rs2);
+        }
+        if constexpr (m) {
+          if (funct7 == 1) { // MULHU
+            const uint64_t product = static_cast<uint64_t>(x.at(rs1)) *
+                                     static_cast<uint64_t>(x.at(rs2));
+            x.at(rd) = product >> 32;
+          }
+        }
         break;
       }
       case 0b100: { // XOR
-        x.at(rd) = x.at(rs1) ^ x.at(rs2);
+        if (funct7 == 0) {
+          x.at(rd) = x.at(rs1) ^ x.at(rs2);
+        }
+        if constexpr (m) {
+          if (funct7 == 1) { // DIV
+            if (static_cast<int32_t>(x.at(rs1)) ==
+                    std::numeric_limits<int32_t>::min() &&
+                static_cast<int32_t>(x.at(rs2)) == -1) {
+              x.at(rd) = std::numeric_limits<int32_t>::min();
+            } else if (x.at(rs2) == 0) {
+              x.at(rd) = 0xffffffff;
+            } else {
+              const int32_t quotient = static_cast<int32_t>(x.at(rs1)) /
+                                       static_cast<int32_t>(x.at(rs2));
+              x.at(rd) = quotient;
+            }
+          }
+        }
         break;
       }
       case 0b101: {
@@ -449,14 +508,56 @@ void Core::execute() {
         } else if (funct7 == 0x20) { // SRA
           x.at(rd) = static_cast<int32_t>(x.at(rs1)) >> shiftamt;
         }
+        if constexpr (m) {
+          if (funct7 == 1) {
+            if (x.at(rs2) == 0) { // DIVU
+              x.at(rd) = 0xffffffff;
+            } else {
+              uint32_t quotient = static_cast<uint32_t>(x.at(rs1)) /
+                                  static_cast<uint32_t>(x.at(rs2));
+              x.at(rd) = quotient;
+            }
+          }
+        }
         break;
       }
       case 0b110: { // OR
-        x.at(rd) = x.at(rs1) | x.at(rs2);
+        if (funct7 == 0) {
+          x.at(rd) = x.at(rs1) | x.at(rs2);
+        }
+        if constexpr (m) { // REM
+          if (funct7 == 1) {
+            if (static_cast<int32_t>(x.at(rs1)) ==
+                    std::numeric_limits<int32_t>::min() &&
+                static_cast<int32_t>(x.at(rs2)) == -1) {
+              x.at(rd) = 0;
+            } else if (x.at(rs2) == 0) {
+              x.at(rd) = x.at(rs1);
+              break;
+            } else {
+              int32_t rem = static_cast<int32_t>(x.at(rs1)) %
+                            static_cast<int32_t>(x.at(rs2));
+              x.at(rd) = rem;
+            }
+          }
+        }
         break;
       }
       case 0b111: { // AND
-        x.at(rd) = x.at(rs1) & x.at(rs2);
+        if (funct7 == 0) {
+          x.at(rd) = x.at(rs1) & x.at(rs2);
+        }
+        if constexpr (m) { // REMU
+          if (funct7 == 1) {
+            if (x.at(rs2) == 0) {
+              x.at(rd) = x.at(rs1);
+              break;
+            }
+            uint32_t rem = static_cast<uint32_t>(x.at(rs1)) %
+                           static_cast<uint32_t>(x.at(rs2));
+            x.at(rd) = rem;
+          }
+        }
         break;
       }
       }
@@ -488,6 +589,7 @@ void Core::execute() {
       }
       break;
     }
+
     default: {
       std::println("unimplemented instruction");
       break;
