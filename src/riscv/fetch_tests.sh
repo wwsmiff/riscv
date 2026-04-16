@@ -18,16 +18,12 @@ if [ ! -d $RISCV_TESTS_DIR ]; then
 	git clone https://github.com/riscv-software-src/riscv-tests $RISCV_TESTS_DIR
 	cd $RISCV_TESTS_DIR
 	git submodule update --init --recursive
-	echo "Building riscv-tests for rv32ui baremetal"
+	echo "Building riscv-tests for rv32uim baremetal"
 	autoconf
-	./configure --host=$RISCV_HOST CFLAGS="-march=rv32i -mabi=ilp32" --with-xlen=32
+	./configure --host=$RISCV_HOST CFLAGS="-march=rv32im -mabi=ilp32" --with-xlen=32
 	sed -i "s/<sys\/signal\.h>/<signal\.h>/g" "./benchmarks/common/syscalls.c" # doesn't compile without this
 	make isa -j$nproc
 	cd ..
-fi
-
-if [ $EMULATOR_EXTENSIONS != "m" ]; then
-	FIND_PATTERN="rv32ui-p-*"
 fi
 
 # if there's no need to git clone, assume already built test executables for rv32ui

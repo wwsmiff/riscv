@@ -1,4 +1,4 @@
-main
+src/riscv/main
 *.o
-riscv-tests/
-riscv-tests-simplified/
+src/riscv/riscv-tests/
+src/riscv/riscv-tests-simplified/
