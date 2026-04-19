@@ -10,6 +10,7 @@ c++ compiler supporting >= c++23
 ### To build and run the emulator alone with [tests](https://github.com/riscv-software-src/riscv-tests):
 ```
 git clone https://github.com/wwsmiff/riscv
+cd riscv/
 cd src/riscv
 make
 chmod +x fetch_tests.sh
@@ -19,7 +20,7 @@ chmod +x run_tests.sh
 ```
 
 ### Also comes with a basic debugger:
-[](screenshots/dbg0.png)
+![](screenshots/dbg0.png)
 It supports
 - Opening binary (.bin not elf) files (rv32im compatible)
 - Run
@@ -40,6 +41,7 @@ It supports
 ### To build and run the debugger (only single core for now)
 ```
 git clone https://github.com/wwsmiff/riscv
+cd riscv
 cd src/dbg
 cmake -S . -B build
 cmake --build build [-j$(nproc)]
