@@ -35,6 +35,7 @@ file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../riscv")
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/ext/")
 target_include_directories(${PROJECT_NAME} PRIVATE "${glfw_SOURCE_DIR}/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "${imgui_SOURCE_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${imgui_SOURCE_DIR}/backends")
@@ -44,7 +45,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE GL glfw)
 
 target_sources(${PROJECT_NAME} PRIVATE
 	main.cpp
-	glad.c
+	ext/glad.c
 	"${CMAKE_SOURCE_DIR}/../riscv/core.cpp"
 	"${CMAKE_SOURCE_DIR}/../riscv/disassemble.cpp"
 	${imgui_sources}

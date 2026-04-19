@@ -6,9 +6,7 @@
 #include "imgui_impl_opengl3.h"
 #include "portable-file-dialogs.h"
 
-#include "platform.hpp"
-#include "core.hpp"
-#include "disassemble.hpp"
+#include "riscv.hpp"
 
 #include <functional>
 #include <format>

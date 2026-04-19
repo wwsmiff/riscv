@@ -7,7 +7,7 @@ main: main.o core.o
 main.o: main.cpp
 	$(CC) $(CFLAGS) -c main.cpp
 
-core.o: core.cpp core.hpp platform.hpp
+core.o: core.cpp core.hpp platform.hpp disassemble.hpp decode.hpp
 	$(CC) $(CFLAGS) -c core.cpp
 
 .PHONY: clean

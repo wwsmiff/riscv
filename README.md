@@ -1,4 +1,4 @@
-### for my understanding of riscv, check [this](riscv.md) out
+### For my understanding of riscv, check [this](riscv.md) out
 
 ### Currently all tests for `rv32u[mi]-p-*` pass. `u` - user-level, `i` - integer, `m` - multiplication/division instructions `p` - no virtual memory, single core.
 

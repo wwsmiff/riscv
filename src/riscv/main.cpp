@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "core.hpp"
-#include "platform.hpp"
+#include "riscv.hpp"
 
 std::vector<std::string> cmdargs(int argc, char **argv) {
   argc--;
