@@ -1,6 +1,9 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <print>
 #include <vector>
 
 #define EXTENSIONS m
@@ -19,7 +22,7 @@ constexpr uint32_t ilen{32};
 constexpr uint32_t allow_misaligned_accesses{false};
 constexpr uint32_t memory_size{2 << 20}; // 2 MiB.
 constexpr uint32_t memory_base{0x80000000};
-constexpr bool verbose{};
+constexpr bool verbose{false};
 #if EXTENSIONS == m
 constexpr uint8_t extensions = static_cast<uint8_t>(Extensions::m);
 #endif
@@ -61,12 +64,5 @@ constexpr opcode_t system  = 0b0'1110011;
 };
 /* clang-format on */
 
-struct Core {
-  uint32_t pc{platform::memory_base};
-  std::array<uint32_t, 32> x{};
-  std::array<uint8_t, platform::memory_size> memory{};
-  void load_binfile(const std::vector<uint8_t> &bindata);
-  platform::instruction_t fetch();
-  void execute();
-};
+std::vector<uint8_t> bindata(const std::filesystem::path &fpath);
 }; // namespace riscv

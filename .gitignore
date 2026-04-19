@@ -2,3 +2,4 @@ src/riscv/main
 *.o
 src/riscv/riscv-tests/
 src/riscv/riscv-tests-simplified/
+src/dbg/build

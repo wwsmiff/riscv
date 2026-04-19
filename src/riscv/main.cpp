@@ -1,11 +1,10 @@
 #include <cstdint>
-#include <filesystem>
-#include <fstream>
 #include <print>
 #include <string>
 #include <vector>
 
-#include "riscv.hpp"
+#include "core.hpp"
+#include "platform.hpp"
 
 std::vector<std::string> cmdargs(int argc, char **argv) {
   argc--;
@@ -16,20 +15,6 @@ std::vector<std::string> cmdargs(int argc, char **argv) {
   }
 
   return args;
-}
-
-std::vector<uint8_t> bindata(const std::filesystem::path &fpath) {
-  std::ifstream binfile(fpath, std::ios::binary);
-  const auto fsize = std::filesystem::file_size(fpath);
-  if (fsize == 0) {
-    std::println(stderr, "Specified file has size 0.");
-    return {};
-  }
-
-  std::vector<uint8_t> fdata(fsize);
-  binfile.read(reinterpret_cast<char *>(fdata.data()), fsize);
-  binfile.close();
-  return fdata;
 }
 
 int main(int argc, char **argv) {
@@ -44,13 +29,13 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  const auto exedata = bindata(exepath);
+  auto exedata = riscv::bindata(exepath);
 
   riscv::Core core{};
   core.x.at(2) = riscv::platform::memory_size;
 
-  core.load_binfile(exedata);
-  core.execute();
+  core.load_bindata(exedata);
+  core.run();
 
   if constexpr (riscv::platform::verbose) {
     for (size_t i{}; i < core.x.size(); ++i) {
@@ -61,6 +46,7 @@ int main(int argc, char **argv) {
 
   // for riscv-tests [https://github.com/riscv-software-src/riscv-tests]
 
+  // eg.
   // pass:
   // 0ff0000f          	fence
   // 00100193          	li	gp,1
