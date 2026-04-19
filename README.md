@@ -66,9 +66,9 @@ cmake --build build [-j$(nproc)]
 ./build/riscv-dbg
 ```
 
-### License
-[glad](https://github.com/Dav1dde/glad/blob/glad2/LICENSE)
-[imgui](https://github.com/ocornut/imgui/blob/master/LICENSE.txt)
-[commit-mono](https://github.com/eigilnikolajsen/commit-mono/blob/main/LICENSE)
-[glfw](https://github.com/glfw/glfw/blob/master/LICENSE.md)
-[pfd](https://github.com/samhocevar/portable-file-dialogs?tab=WTFPL-1-ov-file#readme)
+### External Licenses
+- [glad](https://github.com/Dav1dde/glad/blob/glad2/LICENSE)
+- [imgui](https://github.com/ocornut/imgui/blob/master/LICENSE.txt)
+- [commit-mono](https://github.com/eigilnikolajsen/commit-mono/blob/main/LICENSE)
+- [glfw](https://github.com/glfw/glfw/blob/master/LICENSE.md)
+- [pfd](https://github.com/samhocevar/portable-file-dialogs?tab=WTFPL-1-ov-file#readme)
