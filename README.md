@@ -1,10 +1,28 @@
-### For my understanding of riscv, check [this](riscv.md) out
+### For my understanding of riscv, check [this](riscv.md) out.
 
 ### Currently all tests for `rv32u[mi]-p-*` pass. `u` - user-level, `i` - integer, `m` - multiplication/division instructions `p` - no virtual memory, single core.
 
 ### Basic dependencies
 ```
 c++ compiler supporting >= c++23
+```
+
+### To include the emulator in your own project
+- include `riscv.hpp`
+- compile with `core.cpp`
+```cpp
+#include "riscv.hpp" // from src/riscv/
+
+riscv::Core core{};
+core.memory // uint8_t array of bytes.
+core.x      // uint32_t array of registers.
+core.pc     // program counter.
+core.halt   // flag that becomes true when reaching end of loaded executable.
+
+riscv::bindata(const std::filesystem &path) // open a (binary) file and load it as bytes.
+core.load_bindata(const std::vector<uint8_t> &bindata) // load bytes into core's memory.
+core.execute(); // execute a single instruction from memory.
+core.run();     // run until core.halt == true.
 ```
 
 ### To build and run the emulator alone with [tests](https://github.com/riscv-software-src/riscv-tests):
