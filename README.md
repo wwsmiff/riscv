@@ -1,8 +1,10 @@
 ### for my understanding of riscv, check [this](riscv.md) out
 
+### Currently all tests for `rv32u[mi]-p-*` pass. `u` - user-level, `i` - integer, `m` - multiplication/division instructions `p` - no virtual memory, single core.
+
 ### Basic dependencies
 ```
->= c++23
+c++ compiler supporting >= c++23
 ```
 
 ### To build and run the emulator alone with [tests](https://github.com/riscv-software-src/riscv-tests):
@@ -43,8 +45,6 @@ cmake -S . -B build
 cmake --build build [-j$(nproc)]
 ./build/riscv-dbg
 ```
-
-currently all tests for `rv32u[mi]-p-*` pass. `u` - user-level, `i` - integer, `m` - multiplication/division instructions `p` - no virtual memory, single core.
 
 ### License
 [glad](https://github.com/Dav1dde/glad/blob/glad2/LICENSE)
